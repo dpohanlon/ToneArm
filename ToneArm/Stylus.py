@@ -1,7 +1,7 @@
 import numpy as np
 
-class Stylus(object):
 
+class Stylus(object):
     def __init__(self):
 
-        self.radius = 25E-6 # m
+        self.radius = 25e-6  # m

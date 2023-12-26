@@ -11,14 +11,16 @@ from tqdm import tqdm
 
 import torch
 
-def low_pass_filter(input_signal, cutoff_freq, sampling_rate = 44100, order=5):
+
+def low_pass_filter(input_signal, cutoff_freq, sampling_rate=44100, order=5):
 
     nyquist = 0.5 * sampling_rate
     normal_cutoff = cutoff_freq / nyquist
-    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    b, a = signal.butter(order, normal_cutoff, btype="low", analog=False)
     filtered_signal = signal.filtfilt(b, a, input_signal)
 
     return filtered_signal
+
 
 def riaa_coeffs():
 
@@ -55,14 +57,16 @@ def riaa_coeffs():
 
     return b, a
 
-def riaa_filter(data, mode = 'playback'):
+
+def riaa_filter(data, mode="playback"):
 
     b, a = riaa_coeffs()
 
-    if mode == 'playback':
+    if mode == "playback":
         return signal.lfilter(b, a, data)
     else:
         return signal.lfilter(a, b, data)
+
 
 def normalize_audio(audio, peak=1.0):
     """
@@ -80,13 +84,14 @@ def normalize_audio(audio, peak=1.0):
         return audio  # Return original audio if it's silent to avoid division by zero
     return peak * audio / max_value
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     b, a = riaa_coeffs()
 
     # Frequency response
     # w, h = signal.freqz(b, a, worN=8000) # Playback
-    w, h = signal.freqz(a, b, worN=8000) # Recording
+    w, h = signal.freqz(a, b, worN=8000)  # Recording
 
     # Generate frequency axis in Hz (assuming a sampling rate of 44.1 kHz)
     fs = 44100
@@ -98,20 +103,20 @@ if __name__ == '__main__':
     # Magnitude plot (in dB)
     plt.subplot(2, 1, 1)
     plt.plot(freqs, 20 * np.log10(abs(h)))
-    plt.title('Frequency Response')
-    plt.ylabel('Magnitude [dB]')
-    plt.xscale('log')
+    plt.title("Frequency Response")
+    plt.ylabel("Magnitude [dB]")
+    plt.xscale("log")
     plt.grid(True)
 
     # Phase plot (in degrees)
     plt.subplot(2, 1, 2)
     angles = np.unwrap(np.angle(h))
     plt.plot(freqs, np.degrees(angles))
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Phase [degrees]')
-    plt.xscale('log')
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Phase [degrees]")
+    plt.xscale("log")
     plt.grid(True)
 
     plt.tight_layout()
 
-    plt.savefig('riaa_bode.pdf')
+    plt.savefig("riaa_bode.pdf")

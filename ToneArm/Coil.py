@@ -9,8 +9,17 @@ import numpy as np
 
 from scipy.io import wavfile
 
+
 class Coil:
-    def __init__(self, coil_radius, number_of_turns, remanence, magnet_volume, distance_fudge = 0.01, flux_fudge = 1E-4):
+    def __init__(
+        self,
+        coil_radius,
+        number_of_turns,
+        remanence,
+        magnet_volume,
+        distance_fudge=0.01,
+        flux_fudge=1e-4,
+    ):
         """
         Initializes the Coil object with given parameters.
 
@@ -25,11 +34,13 @@ class Coil:
         self.number_of_turns = number_of_turns
         self.remanence = remanence
         self.magnet_volume = magnet_volume
-        self.resting_distance = 1E-4
+        self.resting_distance = 1e-4
 
-        self.distance_fudge = distance_fudge # 0.01, Slight distortion at maximum deflection
+        self.distance_fudge = (
+            distance_fudge  # 0.01, Slight distortion at maximum deflection
+        )
 
-        self.flux_fudge = flux_fudge # 5mV at maximum deflection
+        self.flux_fudge = flux_fudge  # 5mV at maximum deflection
 
         self.mu0 = 4 * np.pi * 10**-7  # Permeability of free space
 
@@ -48,7 +59,10 @@ class Coil:
         area = np.pi * self.coil_radius**2
 
         # Magnetic field strength at the given distance
-        B = (self.mu0 / (4 * np.pi)) * ((2 * self.remanence * self.magnet_volume) / (self.resting_distance + distance) ** 3)
+        B = (self.mu0 / (4 * np.pi)) * (
+            (2 * self.remanence * self.magnet_volume)
+            / (self.resting_distance + distance) ** 3
+        )
 
         # Magnetic flux
         flux = B * area
@@ -83,16 +97,23 @@ class Coil:
 
         return voltage, flux_change
 
+
 def distance_fudge_calib():
 
-    groove_width = 0.05E-3
-    groove_pitch = 1E-3
+    groove_width = 0.05e-3
+    groove_pitch = 1e-3
 
     # 1 second, 0.36m
 
-    freq = 440 # Hz
+    freq = 440  # Hz
 
-    coil = Coil(coil_radius=1E-2, number_of_turns=1000, remanence=1.0, magnet_volume= 0.01 * 0.01 * 0.01, distance_fudge = 1)
+    coil = Coil(
+        coil_radius=1e-2,
+        number_of_turns=1000,
+        remanence=1.0,
+        magnet_volume=0.01 * 0.01 * 0.01,
+        distance_fudge=1,
+    )
 
     ticks = 44100
     total_time = 1
@@ -104,14 +125,22 @@ def distance_fudge_calib():
 
     for fudge in fudges:
 
-        data = fudge * groove_pitch * np.sin(freq * 2 * np.pi * np.linspace(0, total_time, ticks))
+        data = (
+            fudge
+            * groove_pitch
+            * np.sin(freq * 2 * np.pi * np.linspace(0, total_time, ticks))
+        )
 
         deltaPos = data[1:] - data[:-1]
 
         voltages = []
         fluxes = []
         for i in tqdm(range(len(data) - 2)):
-            voltage, dFlux = coil.induced_voltage(initial_distance=data[i], final_distance=data[i + 1], time_interval=total_time/ticks)
+            voltage, dFlux = coil.induced_voltage(
+                initial_distance=data[i],
+                final_distance=data[i + 1],
+                time_interval=total_time / ticks,
+            )
             voltages.append(voltage)
             fluxes.append(dFlux)
 
@@ -124,12 +153,13 @@ def distance_fudge_calib():
         v = voltages_fudge[i][:200]
         v /= np.sum(v)
 
-        plt.plot(np.linspace(0, total_time, ticks)[:-2][:200], v, label = str(fudge))
+        plt.plot(np.linspace(0, total_time, ticks)[:-2][:200], v, label=str(fudge))
 
-    plt.legend(loc = 0)
-    plt.savefig('fudges.pdf')
+    plt.legend(loc=0)
+    plt.savefig("fudges.pdf")
     plt.clf()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     distance_fudge_calib()
