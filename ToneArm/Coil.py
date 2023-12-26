@@ -83,61 +83,6 @@ class Coil:
 
         return voltage, flux_change
 
-class VinylCartridgeModel:
-    def __init__(self, coil_width, magnet_strength, frequency, damping_factor=0.1, sampling_rate=10000):
-        self.coil_width = coil_width  # Width of the coil
-        self.magnet_strength = magnet_strength  # Strength of the magnetic field
-        self.frequency = frequency  # Frequency of the audio signal (Hz)
-        self.damping_factor = damping_factor  # Damping factor to smooth out spikes
-        self.sampling_rate = sampling_rate  # Sampling rate for the simulation
-
-    def simulate(self, duration):
-        time = np.linspace(0, duration, int(self.sampling_rate * duration))
-        magnet_position = 0.1 * np.sin(2 * np.pi * self.frequency * time)  # Simple harmonic motion
-
-        # Simulate the change in magnetic flux and induced voltage for each small section of the coil
-        num_sections = 1000  # Divide the coil into 100 small sections
-        section_width = self.coil_width / num_sections
-        voltages = np.zeros_like(time)
-
-        for section in range(num_sections):
-            section_center = (section + 0.5) * section_width
-            distance_from_magnet = np.abs(section_center - magnet_position)
-            # Modified flux change calculation with damping factor
-            flux_change = self.magnet_strength / (distance_from_magnet + self.damping_factor)
-            voltages += np.gradient(flux_change, time)  # Faraday's Law of Induction
-
-        return time, voltages
-
-def normalize_audio(audio, peak=1.0):
-    """
-    Normalize the audio signal to the given peak level.
-
-    Parameters:
-    audio (numpy.array): Input audio signal.
-    peak (float): Peak value to normalize to. Default is 1.0 (maximum for float32).
-
-    Returns:
-    numpy.array: Normalized audio signal.
-    """
-    max_value = np.max(np.abs(audio))
-    if max_value == 0:
-        return audio  # Return original audio if it's silent to avoid division by zero
-    return peak * audio / max_value
-
-def write_to_wav(filename, audio, sample_rate = 44100):
-    """
-    Write the audio signal to a WAV file.
-
-    Parameters:
-    filename (str): Output WAV file name.
-    audio (numpy.array): Audio signal to write.
-    sample_rate (int): Sampling rate of the audio signal.
-    """
-    # Convert to 16-bit integers for WAV file format
-    int_audio = np.int16(audio * 32767)
-    wavfile.write(filename, sample_rate, int_audio)
-
 def distance_fudge_calib():
 
     groove_width = 0.05E-3
@@ -187,48 +132,4 @@ def distance_fudge_calib():
 
 if __name__ == '__main__':
 
-    groove_width = 0.05E-3
-    groove_pitch = 1E-3
-
-    # 1 second, 0.36m
-
-    freq = 440 # Hz
-
-    coil = Coil(coil_radius=1E-2, number_of_turns=1000, remanence=1.0, magnet_volume= 0.01 * 0.01 * 0.01)
-
-    ticks = 44100
-    total_time = 1
-
-    # Fudge factor so that maximum deviation causes slight distortion at ~5mV peak-peak
-
-    data = groove_pitch * np.sin(freq * 2 * np.pi * np.linspace(0, total_time, ticks))
-    data += np.random.normal(0, 0.005 * np.mean(np.abs(data)), size = data.shape)
-
-    plt.plot(np.linspace(0, total_time, ticks)[:250], data[:250])
-    plt.savefig('a.pdf')
-    plt.clf()
-
-    deltaPos = data[1:] - data[:-1]
-
-    voltages = []
-    fluxes = []
-    for i in tqdm(range(len(data) - 2)):
-        voltage, dFlux = coil.induced_voltage(initial_distance=data[i], final_distance=data[i + 1], time_interval=total_time/ticks)
-        voltages.append(voltage)
-        fluxes.append(dFlux)
-
-    plt.plot(fluxes[:1000])
-    plt.savefig('f.pdf')
-    plt.clf()
-
-    voltages = np.array(voltages)
-
-    print(deltaPos[:-1][voltages < 100][:100])
-
-    plt.plot(np.linspace(0, total_time, ticks)[:-2][:100], voltages[:100])
-
-    plt.savefig('v.pdf')
-    plt.clf()
-
-    norm_voltages = normalize_audio(voltages)
-    write_to_wav('test.wav', norm_voltages)
+    distance_fudge_calib()
