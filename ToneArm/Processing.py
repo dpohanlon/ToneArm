@@ -85,6 +85,22 @@ def normalize_audio(audio, peak=1.0):
     return peak * audio / max_value
 
 
+def filter_stylus_radius(signal, stylus, velocity=0.5):
+
+    cutoff_freq = velocity / (4 * stylus.radius)
+
+    return low_pass_filter(signal, cutoff_freq)
+
+
+def bump(freq, length):
+
+    xs = np.linspace(0, length, length)
+
+    return np.exp((-(10 ** -np.log(0.01 * length)) * (xs - length / 2) ** 2)) * np.sin(
+        2 * np.pi * (freq / 44100) * xs
+    )
+
+
 if __name__ == "__main__":
 
     b, a = riaa_coeffs()
