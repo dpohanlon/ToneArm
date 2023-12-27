@@ -73,6 +73,7 @@ def noise_pops(data, density=5000):
 
     return data
 
+
 def run_simulation(file_name, output_name, hiss_density, pop_density, total_time):
 
     stylus = Stylus()
@@ -90,7 +91,7 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
 
     # If stero, make mono
     if len(data.shape) > 1:
-        data = np.mean(data, axis = 1)
+        data = np.mean(data, axis=1)
 
     data = data.astype("float")
 
@@ -100,8 +101,8 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
     data = normalize_audio(data)
     data = stylus.groove_pitch * data
 
-    data = noise_hiss(data, density = hiss_density)
-    data = noise_pops(data, density = pop_density)
+    data = noise_hiss(data, density=hiss_density)
+    data = noise_pops(data, density=pop_density)
 
     # Not working, for some reason
     # data = riaa_filter(data, mode = 'recording')
@@ -127,6 +128,7 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
     voltages_filtered = filter_stylus_radius(norm_voltages, stylus)
     write_to_wav(f"{output_name}.wav", voltages_filtered)
 
+
 if __name__ == "__main__":
 
     argParser = argparse.ArgumentParser()
@@ -148,7 +150,11 @@ if __name__ == "__main__":
     )
 
     argParser.add_argument(
-        "--hiss", type=int, dest="hiss_density", default=1000, help="Hiss noise density."
+        "--hiss",
+        type=int,
+        dest="hiss_density",
+        default=1000,
+        help="Hiss noise density.",
     )
 
     argParser.add_argument(
@@ -156,9 +162,19 @@ if __name__ == "__main__":
     )
 
     argParser.add_argument(
-        "--length", type=float, dest="length", default=None, help="Max output size (seconds)."
+        "--length",
+        type=float,
+        dest="length",
+        default=None,
+        help="Max output size (seconds).",
     )
 
     args = argParser.parse_args()
 
-    run_simulation(args.file_name, args.output_name, args.hiss_density, args.pop_density, args.length)
+    run_simulation(
+        args.file_name,
+        args.output_name,
+        args.hiss_density,
+        args.pop_density,
+        args.length,
+    )
