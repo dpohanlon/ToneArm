@@ -11,11 +11,11 @@ import numpy as np
 
 from scipy.io import wavfile
 
-from scipy.signal import resample, savgol_filter
+from scipy.interpolate import interp1d
 
-from Coil import Coil
-from Stylus import Stylus
-from Processing import (
+from ToneArm.Coil import Coil
+from ToneArm.Stylus import Stylus
+from ToneArm.Processing import (
     low_pass_filter,
     riaa_filter,
     normalize_audio,
@@ -49,6 +49,9 @@ def noise_hiss(data, density=1000):
         a = np.clip(np.random.normal(1e-4, 1e-4), 0, 2e-4)
         f = np.random.randint(5000, 12000)
 
+        if s + l > length:
+            continue
+
         data[s : s + l] += a * bump(freq=f, length=l)
 
     return data
@@ -62,6 +65,10 @@ def noise_pops(data, density=5000):
     for s in np.random.randint(0, length, size=number):
 
         l = np.random.choice([100, 200, 500, 1000], p=[0.45, 0.3, 0.2, 0.05])
+
+        if s + l > length:
+            continue
+
         p = np.array([1, 1, 4, 4, 2, 1, 0.5])
         p /= np.sum(p)
 
@@ -74,7 +81,37 @@ def noise_pops(data, density=5000):
     return data
 
 
-def run_simulation(file_name, output_name, hiss_density, pop_density, total_time):
+def simulate_wow(audio, rate=44100, depth=0.001, freq=0.5):
+
+    t = np.arange(len(audio)) / rate
+
+    # Create a slow LFO for wow
+    lfo = np.sin(2 * np.pi * freq * t) * depth
+
+    new_t = t + lfo
+    interpolate = interp1d(new_t, audio, kind="linear", fill_value="extrapolate")
+
+    return interpolate(t)
+
+
+def simulate_flutter(audio, rate=44100, depth=0.0001, freq=10):
+
+    t = np.arange(len(audio)) / rate
+
+    lfo = np.sin(2 * np.pi * freq * t) * depth
+
+    return audio * (1 + lfo)
+
+
+def run_simulation(
+    file_name,
+    output_name,
+    hiss_density,
+    pop_density,
+    wow_depth,
+    flutter_depth,
+    total_time,
+):
 
     stylus = Stylus()
 
@@ -85,9 +122,17 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
         magnet_volume=0.01 * 0.01 * 0.01,
     )
 
-    # Fudge factor so that maximum deviation causes slight distortion at ~5mV peak-peak
+    if file_name != None:
 
-    ticks, data = wavfile.read(file_name)
+        ticks, data = wavfile.read(file_name)
+
+    else:
+
+        if total_time == None:
+            total_time = 10
+
+        ticks = 44100
+        data = np.zeros(int(ticks * total_time), dtype=float)
 
     # If stero, make mono
     if len(data.shape) > 1:
@@ -100,6 +145,11 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
 
     data = normalize_audio(data)
     data = stylus.groove_pitch * data
+
+    wow_freq, flutter_freq = stylus.calculate_wow_flutter_frequencies()
+
+    data = simulate_wow(data, freq=wow_freq, depth=wow_depth)
+    data = simulate_flutter(data, freq=flutter_freq, depth=flutter_depth)
 
     data = noise_hiss(data, density=hiss_density)
     data = noise_pops(data, density=pop_density)
@@ -129,7 +179,7 @@ def run_simulation(file_name, output_name, hiss_density, pop_density, total_time
     write_to_wav(f"{output_name}.wav", voltages_filtered)
 
 
-if __name__ == "__main__":
+def run_tonearm():
 
     argParser = argparse.ArgumentParser()
 
@@ -137,7 +187,7 @@ if __name__ == "__main__":
         "--input",
         type=str,
         dest="file_name",
-        default="test.wav",
+        default=None,
         help="Input wave file.",
     )
 
@@ -162,6 +212,22 @@ if __name__ == "__main__":
     )
 
     argParser.add_argument(
+        "--wow",
+        type=float,
+        dest="wow_depth",
+        default=0.0005,
+        help="Wow (low frequency distortion) depth.",
+    )
+
+    argParser.add_argument(
+        "--flutter",
+        type=float,
+        dest="flutter_depth",
+        default=0.0001,
+        help="flutter (high frequency distortion) depth.",
+    )
+
+    argParser.add_argument(
         "--length",
         type=float,
         dest="length",
@@ -176,5 +242,12 @@ if __name__ == "__main__":
         args.output_name,
         args.hiss_density,
         args.pop_density,
+        args.wow_depth,
+        args.flutter_depth,
         args.length,
     )
+
+
+if __name__ == "__main__":
+
+    run_tonearm()

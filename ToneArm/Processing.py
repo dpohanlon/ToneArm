@@ -9,8 +9,6 @@ import scipy.signal as signal
 
 from tqdm import tqdm
 
-import torch
-
 
 def low_pass_filter(input_signal, cutoff_freq, sampling_rate=44100, order=5):
 

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "tonearm"
+version = "0.1.0"
+description = "Vinyl record playback noise from physical simulations"
+authors = ["Daniel O'Hanlon"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.26.2"
+SciPy = "^1.11.4"
+matplotlib = "^3.8.2"
+tqdm = "^4.66.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+tonearm = "ToneArm.simulate:run_tonearm"
