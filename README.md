@@ -8,12 +8,19 @@ Vinyl record playback noise from physical simulations.
 
 Features
 --------
-
 * Hiss and popping noise due to dust and damage
 * High frequency roll-off due to stylus size
 * Wow and flutter low frequency distortion
 * Distortion at high amplitudes from cartridge non-linearity
 * RIAA playback equalisation
+
+Examples
+--------
+https://github.com/dpohanlon/ToneArm/assets/611838/8bf34248-2f17-4eeb-82b1-19ed1cf5ed14
+
+
+https://github.com/dpohanlon/ToneArm/assets/611838/612e2cee-5c2f-4904-bf50-dee97bfb9e06
+
 
 Installation
 ------------
